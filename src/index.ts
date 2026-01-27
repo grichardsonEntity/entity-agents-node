@@ -1,11 +1,12 @@
 /**
  * Entity Agents - Node/TypeScript Edition
  *
- * A team of 10 specialized autonomous AI agents for software development.
+ * A team of 11 specialized autonomous AI agents for software development.
  *
  * Consolidated Team:
  * - Sydney: Full Stack Developer (merged Sydney + original Valentina UI)
  * - Valentina: Technical Writer & Content Strategist (merged Sugar + Harper)
+ * - Vera: Cloud & AI Platform Specialist (GCP, Vertex AI, HIPAA)
  */
 
 // Shared exports
@@ -22,6 +23,7 @@ export { SophieAgent, sophieConfig } from './sophie/index.js';
 export { AshetonAgent, ashetonConfig } from './asheton/index.js';
 export { MaxwellAgent, maxwellConfig } from './maxwell/index.js';
 export { QuinnAgent, quinnConfig } from './quinn/index.js';
+export { VeraAgent, veraConfig } from './vera/index.js';
 
 // Agent registry
 export const AGENTS = {
@@ -35,6 +37,7 @@ export const AGENTS = {
   asheton: AshetonAgent,
   maxwell: MaxwellAgent,
   quinn: QuinnAgent,
+  vera: VeraAgent,
 } as const;
 
 export type AgentName = keyof typeof AGENTS;
@@ -64,3 +67,4 @@ import { SophieAgent } from './sophie/index.js';
 import { AshetonAgent } from './asheton/index.js';
 import { MaxwellAgent } from './maxwell/index.js';
 import { QuinnAgent } from './quinn/index.js';
+import { VeraAgent } from './vera/index.js';
