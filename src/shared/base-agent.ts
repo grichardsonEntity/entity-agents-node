@@ -72,7 +72,7 @@ export abstract class BaseAgent {
     await this.notifier.notify(`Starting task...`);
 
     try {
-      const { stdout, stderr } = await execAsync(
+      const { stdout } = await execAsync(
         `claude --print --system-prompt "${this.config.systemPrompt.replace(/"/g, '\\"')}" "${prompt.replace(/"/g, '\\"')}"`,
         {
           cwd: this.config.projectRoot,

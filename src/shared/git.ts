@@ -4,7 +4,7 @@
 
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import type { CommitResult } from './types.js';
+// CommitResult type is used by consumers of this module
 
 const execAsync = promisify(exec);
 
