@@ -405,6 +405,523 @@ ${funderUrl ? `URL: ${funderUrl}` : ''}
   }
 
   // ============================================
+  // DOCUMENT GENERATION METHODS
+  // ============================================
+
+  async createPresentation(
+    title: string,
+    content: Record<string, unknown>,
+    templatePath?: string,
+    outputPath?: string
+  ): Promise<TaskResult> {
+    await this.notifier.notify(`Creating presentation: ${title}`);
+
+    const output = outputPath || `output/${title.toLowerCase().replace(/\s+/g, '-')}.pptx`;
+
+    const prompt = `
+Create a PowerPoint presentation using pptxgenjs (Node.js):
+
+**Title:** ${title}
+**Template:** ${templatePath || 'Create from scratch with professional styling'}
+**Output:** ${output}
+**Content:** ${JSON.stringify(content, null, 2)}
+
+**Implementation:**
+\`\`\`typescript
+import PptxGenJS from 'pptxgenjs';
+
+const pptx = new PptxGenJS();
+
+// Set presentation properties
+pptx.author = 'ARES Security';
+pptx.title = '${title}';
+pptx.subject = 'Training/Product Documentation';
+
+// Define master slide with branding
+pptx.defineSlideMaster({
+  title: 'ARES_MASTER',
+  background: { color: 'FFFFFF' },
+  objects: [
+    { rect: { x: 0, y: 6.9, w: '100%', h: 0.6, fill: { color: '003366' } } },
+    { text: { text: 'ARES Security', options: { x: 0.5, y: 7.0, w: 3, h: 0.4, color: 'FFFFFF', fontSize: 10 } } }
+  ]
+});
+
+// Add title slide
+let slide = pptx.addSlide();
+slide.addText('${title}', { x: 0.5, y: 2.5, w: '90%', h: 1.5, fontSize: 44, bold: true, color: '003366', align: 'center' });
+slide.addText(new Date().toLocaleDateString(), { x: 0.5, y: 4.5, w: '90%', h: 0.5, fontSize: 18, color: '666666', align: 'center' });
+
+// Add content slides based on content object
+for (const [sectionTitle, sectionContent] of Object.entries(content)) {
+  slide = pptx.addSlide({ masterName: 'ARES_MASTER' });
+  slide.addText(sectionTitle, { x: 0.5, y: 0.5, w: '90%', h: 1, fontSize: 32, bold: true, color: '003366' });
+
+  if (Array.isArray(sectionContent)) {
+    // Bullet points
+    slide.addText(sectionContent.map(item => ({ text: item, options: { bullet: true } })),
+      { x: 0.5, y: 1.5, w: '90%', h: 5, fontSize: 18, color: '333333' });
+  } else {
+    slide.addText(String(sectionContent), { x: 0.5, y: 1.5, w: '90%', h: 5, fontSize: 18, color: '333333' });
+  }
+}
+
+// Save presentation
+await pptx.writeFile({ fileName: '${output}' });
+\`\`\`
+
+**Slide Structure Guidelines:**
+1. Title slide with presentation title and date
+2. Agenda/overview slide
+3. Content slides (one key message per slide)
+4. Summary/conclusion slide
+
+**Before delivering, verify:**
+- [ ] All slides render correctly
+- [ ] Formatting is consistent
+- [ ] Text is readable
+- [ ] File saves without errors
+`;
+
+    return this.runTask(prompt);
+  }
+
+  async createDocument(
+    title: string,
+    content: Record<string, unknown>,
+    templatePath?: string,
+    outputPath?: string,
+    docType: 'report' | 'prd' | 'training' = 'report'
+  ): Promise<TaskResult> {
+    await this.notifier.notify(`Creating document: ${title}`);
+
+    const output = outputPath || `output/${title.toLowerCase().replace(/\s+/g, '-')}.docx`;
+
+    const prompt = `
+Create a Word document using docx (Node.js):
+
+**Title:** ${title}
+**Type:** ${docType}
+**Template:** ${templatePath || 'Create from scratch with professional styling'}
+**Output:** ${output}
+**Content:** ${JSON.stringify(content, null, 2)}
+
+**Implementation:**
+\`\`\`typescript
+import { Document, Packer, Paragraph, TextRun, HeadingLevel, TableOfContents, Header, Footer, PageNumber } from 'docx';
+import * as fs from 'fs';
+
+const doc = new Document({
+  creator: 'ARES Security',
+  title: '${title}',
+  description: '${docType} document',
+  sections: [{
+    properties: {},
+    headers: {
+      default: new Header({
+        children: [new Paragraph({ text: '${title}', alignment: 'right' })]
+      })
+    },
+    footers: {
+      default: new Footer({
+        children: [new Paragraph({
+          children: [new TextRun('Page '), PageNumber.CURRENT, new TextRun(' of '), PageNumber.TOTAL_PAGES]
+        })]
+      })
+    },
+    children: [
+      // Title
+      new Paragraph({
+        text: '${title}',
+        heading: HeadingLevel.TITLE,
+        spacing: { after: 400 }
+      }),
+
+      // Table of Contents
+      new TableOfContents('Table of Contents', {
+        hyperlink: true,
+        headingStyleRange: '1-3'
+      }),
+
+      // Content sections
+      ${docType === 'report' ? `
+      // Report structure
+      new Paragraph({ text: 'Executive Summary', heading: HeadingLevel.HEADING_1 }),
+      new Paragraph({ text: content.executiveSummary || '[Executive summary content]' }),
+
+      new Paragraph({ text: 'Introduction', heading: HeadingLevel.HEADING_1 }),
+      new Paragraph({ text: content.introduction || '[Introduction content]' }),
+
+      new Paragraph({ text: 'Findings', heading: HeadingLevel.HEADING_1 }),
+      new Paragraph({ text: content.findings || '[Findings content]' }),
+
+      new Paragraph({ text: 'Recommendations', heading: HeadingLevel.HEADING_1 }),
+      new Paragraph({ text: content.recommendations || '[Recommendations content]' }),
+
+      new Paragraph({ text: 'Conclusion', heading: HeadingLevel.HEADING_1 }),
+      new Paragraph({ text: content.conclusion || '[Conclusion content]' }),
+      ` : ''}
+      ${docType === 'prd' ? `
+      // PRD structure
+      new Paragraph({ text: 'Overview', heading: HeadingLevel.HEADING_1 }),
+      new Paragraph({ text: content.overview || '[Overview content]' }),
+
+      new Paragraph({ text: 'Problem Statement', heading: HeadingLevel.HEADING_1 }),
+      new Paragraph({ text: content.problem || '[Problem statement]' }),
+
+      new Paragraph({ text: 'Goals & Objectives', heading: HeadingLevel.HEADING_1 }),
+      new Paragraph({ text: content.goals || '[Goals content]' }),
+
+      new Paragraph({ text: 'Requirements', heading: HeadingLevel.HEADING_1 }),
+      new Paragraph({ text: content.requirements || '[Requirements content]' }),
+
+      new Paragraph({ text: 'User Stories', heading: HeadingLevel.HEADING_1 }),
+      new Paragraph({ text: content.userStories || '[User stories content]' }),
+      ` : ''}
+      ${docType === 'training' ? `
+      // Training plan structure
+      new Paragraph({ text: 'Training Overview', heading: HeadingLevel.HEADING_1 }),
+      new Paragraph({ text: content.overview || '[Training overview]' }),
+
+      new Paragraph({ text: 'Learning Objectives', heading: HeadingLevel.HEADING_1 }),
+      new Paragraph({ text: content.objectives || '[Objectives content]' }),
+
+      new Paragraph({ text: 'Curriculum', heading: HeadingLevel.HEADING_1 }),
+      new Paragraph({ text: content.curriculum || '[Curriculum content]' }),
+
+      new Paragraph({ text: 'Schedule', heading: HeadingLevel.HEADING_1 }),
+      new Paragraph({ text: content.schedule || '[Schedule content]' }),
+
+      new Paragraph({ text: 'Assessment', heading: HeadingLevel.HEADING_1 }),
+      new Paragraph({ text: content.assessment || '[Assessment content]' }),
+      ` : ''}
+    ]
+  }]
+});
+
+// Save document
+const buffer = await Packer.toBuffer(doc);
+fs.writeFileSync('${output}', buffer);
+\`\`\`
+
+**Before delivering, verify:**
+- [ ] Document opens correctly
+- [ ] Styles are consistent
+- [ ] Headers/footers are set
+- [ ] Table of contents works
+`;
+
+    return this.runTask(prompt);
+  }
+
+  async createPdf(
+    title: string,
+    content: Record<string, unknown>,
+    outputPath?: string,
+    fromDocx?: string
+  ): Promise<TaskResult> {
+    await this.notifier.notify(`Creating PDF: ${title}`);
+
+    const output = outputPath || `output/${title.toLowerCase().replace(/\s+/g, '-')}.pdf`;
+
+    const prompt = `
+Create a PDF document:
+
+**Title:** ${title}
+**Output:** ${output}
+**Content:** ${JSON.stringify(content, null, 2)}
+${fromDocx ? `**Source DOCX:** ${fromDocx}` : ''}
+
+**Implementation with PDFKit (Node.js):**
+\`\`\`typescript
+import PDFDocument from 'pdfkit';
+import * as fs from 'fs';
+
+const doc = new PDFDocument({
+  size: 'LETTER',
+  margins: { top: 72, bottom: 72, left: 72, right: 72 },
+  info: {
+    Title: '${title}',
+    Author: 'ARES Security'
+  }
+});
+
+const stream = fs.createWriteStream('${output}');
+doc.pipe(stream);
+
+// Title
+doc.fontSize(24)
+   .fillColor('#003366')
+   .text('${title}', { align: 'center' });
+
+doc.moveDown(2);
+
+// Content sections
+const content = ${JSON.stringify(content)};
+
+for (const [sectionTitle, sectionContent] of Object.entries(content)) {
+  // Section heading
+  doc.fontSize(16)
+     .fillColor('#003366')
+     .text(sectionTitle);
+
+  doc.moveDown(0.5);
+
+  // Section content
+  doc.fontSize(11)
+     .fillColor('#333333')
+     .text(String(sectionContent), { align: 'justify' });
+
+  doc.moveDown(1.5);
+}
+
+// Footer with page numbers
+const pages = doc.bufferedPageRange();
+for (let i = 0; i < pages.count; i++) {
+  doc.switchToPage(i);
+  doc.fontSize(10)
+     .fillColor('#666666')
+     .text(\`Page \${i + 1} of \${pages.count}\`,
+       72, doc.page.height - 50,
+       { align: 'center', width: doc.page.width - 144 });
+}
+
+doc.end();
+\`\`\`
+
+${fromDocx ? `
+**Alternative: Convert from DOCX using libreoffice-convert:**
+\`\`\`typescript
+import libre from 'libreoffice-convert';
+import * as fs from 'fs';
+import { promisify } from 'util';
+
+const convert = promisify(libre.convert);
+const docxBuffer = fs.readFileSync('${fromDocx}');
+const pdfBuffer = await convert(docxBuffer, '.pdf', undefined);
+fs.writeFileSync('${output}', pdfBuffer);
+\`\`\`
+` : ''}
+
+**Before delivering, verify:**
+- [ ] PDF opens correctly
+- [ ] All pages render
+- [ ] Text is selectable
+- [ ] File size is reasonable
+`;
+
+    return this.runTask(prompt);
+  }
+
+  async applyTemplate(
+    templatePath: string,
+    data: Record<string, unknown>,
+    outputPath: string
+  ): Promise<TaskResult> {
+    await this.notifier.notify(`Applying template: ${templatePath}`);
+
+    const fileExt = templatePath.split('.').pop()?.toLowerCase() || '';
+
+    const prompt = `
+Apply data to template:
+
+**Template:** ${templatePath}
+**Output:** ${outputPath}
+**Data:** ${JSON.stringify(data, null, 2)}
+**Format:** ${fileExt.toUpperCase()}
+
+**Placeholder Pattern:**
+Templates use {{PLACEHOLDER}} syntax for variable replacement.
+
+${fileExt === 'pptx' ? `
+**Implementation for PPTX:**
+\`\`\`typescript
+import PptxGenJS from 'pptxgenjs';
+// Note: pptxgenjs doesn't support loading existing files
+// Use officegen or consider python-pptx for template modification
+
+// Alternative approach: recreate presentation with template styling
+const pptx = new PptxGenJS();
+const data = ${JSON.stringify(data)};
+
+// Apply data to recreated slides matching template structure
+// ...
+\`\`\`
+` : ''}
+
+${fileExt === 'docx' ? `
+**Implementation for DOCX:**
+\`\`\`typescript
+import * as fs from 'fs';
+import Docxtemplater from 'docxtemplater';
+import PizZip from 'pizzip';
+
+const templateContent = fs.readFileSync('${templatePath}', 'binary');
+const zip = new PizZip(templateContent);
+
+const doc = new Docxtemplater(zip, {
+  paragraphLoop: true,
+  linebreaks: true,
+});
+
+const data = ${JSON.stringify(data)};
+doc.render(data);
+
+const buffer = doc.getZip().generate({
+  type: 'nodebuffer',
+  compression: 'DEFLATE',
+});
+
+fs.writeFileSync('${outputPath}', buffer);
+\`\`\`
+` : ''}
+
+**Before delivering, verify:**
+- [ ] All placeholders replaced
+- [ ] Formatting preserved
+- [ ] No {{PLACEHOLDER}} text remains
+- [ ] Output file opens correctly
+`;
+
+    return this.runTask(prompt);
+  }
+
+  async createTrainingPlan(
+    title: string,
+    objectives: string[],
+    duration: string,
+    audience: string,
+    outputFormat: 'pptx' | 'docx' | 'pdf' = 'pptx'
+  ): Promise<TaskResult> {
+    await this.notifier.notify(`Creating training plan: ${title}`);
+
+    const prompt = `
+Create a training plan:
+
+**Title:** ${title}
+**Learning Objectives:** ${JSON.stringify(objectives)}
+**Duration:** ${duration}
+**Target Audience:** ${audience}
+**Output Format:** ${outputFormat.toUpperCase()}
+
+**Training Plan Structure:**
+
+## 1. Training Overview
+- Purpose and scope
+- Target audience description
+- Prerequisites
+
+## 2. Learning Objectives
+By the end of this training, participants will be able to:
+${objectives.map(obj => `- ${obj}`).join('\n')}
+
+## 3. Curriculum Outline
+
+| Module | Topic | Duration | Method |
+|--------|-------|----------|--------|
+| 1 | Introduction & Overview | X hrs | Lecture |
+| 2 | Core Concepts | X hrs | Interactive |
+| 3 | Hands-on Practice | X hrs | Lab |
+| 4 | Advanced Topics | X hrs | Workshop |
+| 5 | Assessment & Review | X hrs | Exam/Project |
+
+## 4. Detailed Module Breakdown
+[Module details for each...]
+
+## 5. Training Schedule
+[Day-by-day schedule...]
+
+## 6. Assessment & Evaluation
+- Knowledge checks
+- Practical assessments
+- Certification criteria
+
+## 7. Resources & Materials
+- Training materials list
+- Equipment needed
+
+**Output as ${outputFormat.toUpperCase()}:**
+${outputFormat === 'pptx' ? 'Create PowerPoint with one module per section, visual aids, and speaker notes' : ''}
+${outputFormat === 'docx' ? 'Create Word document with professional formatting and table of contents' : ''}
+${outputFormat === 'pdf' ? 'Create PDF with clean layout and print-ready formatting' : ''}
+
+Save to: output/${title.toLowerCase().replace(/\s+/g, '-')}-training-plan.${outputFormat}
+
+**Before delivering, verify:**
+- [ ] All modules are complete
+- [ ] Timeline is realistic
+- [ ] Objectives map to assessments
+`;
+
+    return this.runTask(prompt);
+  }
+
+  async createPrd(
+    productName: string,
+    problemStatement: string,
+    targetUsers: string,
+    outputFormat: 'pptx' | 'docx' | 'pdf' = 'docx'
+  ): Promise<TaskResult> {
+    await this.notifier.notify(`Creating PRD: ${productName}`);
+
+    const prompt = `
+Create a Product Requirements Document (PRD):
+
+**Product:** ${productName}
+**Problem:** ${problemStatement}
+**Target Users:** ${targetUsers}
+**Output Format:** ${outputFormat.toUpperCase()}
+
+**PRD Structure:**
+
+# Product Requirements Document: ${productName}
+
+## 1. Overview
+### 1.1 Purpose
+### 1.2 Scope
+### 1.3 Definitions
+
+## 2. Problem Statement
+${problemStatement}
+
+### 2.1 Current State
+### 2.2 Pain Points
+
+## 3. Goals & Objectives
+### 3.1 Business Goals
+### 3.2 User Goals
+### 3.3 Success Metrics (KPIs)
+
+## 4. Target Users
+${targetUsers}
+
+### 4.1 User Personas
+### 4.2 User Journeys
+
+## 5. Requirements
+### 5.1 Functional Requirements
+### 5.2 Non-Functional Requirements
+
+## 6. User Stories
+
+## 7. Technical Considerations
+
+## 8. Timeline & Milestones
+
+## 9. Risks & Mitigations
+
+Save to: output/${productName.toLowerCase().replace(/\s+/g, '-')}-prd.${outputFormat}
+
+**Before delivering, verify:**
+- [ ] All sections complete
+- [ ] Requirements are measurable
+- [ ] User stories have acceptance criteria
+`;
+
+    return this.runTask(prompt);
+  }
+
+  // ============================================
   // GENERAL
   // ============================================
 
