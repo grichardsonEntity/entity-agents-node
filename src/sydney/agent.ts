@@ -305,6 +305,388 @@ Improve accessibility of component: ${componentPath}
   }
 
   // ============================================
+  // GRAPHQL
+  // ============================================
+
+  async createGraphqlSchema(entities: string, relationships?: string): Promise<TaskResult> {
+    await this.notifier.notify(`Creating GraphQL schema for: ${entities.substring(0, 50)}`);
+
+    const prompt = `
+Create a complete GraphQL schema:
+
+**Entities:** ${entities}
+${relationships ? `**Relationships:** ${relationships}` : ''}
+
+## Deliverables
+
+### 1. Schema Types
+- Define GraphQL types for each entity
+- Add input types for create/update mutations
+- Include connection types for cursor-based pagination (Relay spec)
+- Define enums, interfaces, and unions where appropriate
+
+### 2. Queries
+- Single entity lookup by ID
+- Paginated list queries with cursor-based pagination
+- Filter and sort arguments
+- Use DataLoader for batched/cached field resolution
+
+### 3. Mutations
+- Create, update, delete for each entity
+- Input validation with clear error messages
+- Return the mutated entity
+
+### 4. Subscriptions
+- Real-time updates for entity changes (created, updated, deleted)
+- PubSub pattern with proper topic naming
+- Filter subscriptions by relevant criteria
+
+### 5. DataLoader Setup
+\`\`\`typescript
+import DataLoader from 'dataloader';
+
+const userLoader = new DataLoader<string, User>(async (ids) => {
+  const users = await db.users.findMany({ where: { id: { in: [...ids] } } });
+  const userMap = new Map(users.map(u => [u.id, u]));
+  return ids.map(id => userMap.get(id)!);
+});
+\`\`\`
+
+### 6. Federation (if multi-service)
+- Entity references with @key directive
+- Extend types across subgraphs
+- Gateway composition strategy
+
+**Verification:**
+- [ ] All types are properly defined
+- [ ] Pagination follows cursor-based spec
+- [ ] DataLoader eliminates N+1 queries
+- [ ] Subscriptions have proper PubSub setup
+- [ ] Input validation is comprehensive
+- [ ] Schema compiles without errors
+`;
+
+    return this.runTask(prompt);
+  }
+
+  // ============================================
+  // CACHING
+  // ============================================
+
+  async setupCaching(service: string, cacheStrategy: string = 'cache-aside'): Promise<TaskResult> {
+    await this.notifier.notify(`Setting up ${cacheStrategy} caching for: ${service}`);
+
+    const prompt = `
+Set up a caching layer for service: ${service}
+
+**Cache Strategy:** ${cacheStrategy}
+
+## Deliverables
+
+### 1. Redis Cache Service
+\`\`\`typescript
+export class CacheService {
+  // Implement ${cacheStrategy} pattern
+  // - cache-aside: Read from cache first, fetch from DB on miss, populate cache
+  // - write-through: Write to cache and DB simultaneously
+  // - write-behind: Write to cache immediately, async write to DB
+}
+\`\`\`
+
+### 2. TTL Strategy
+- Define per-entity TTL values based on data volatility
+- Implement sliding expiration for frequently accessed data
+- Add stale-while-revalidate for improved latency
+
+### 3. Cache Invalidation
+- Tag-based invalidation (invalidate all caches related to an entity)
+- Event-driven invalidation on writes/updates/deletes
+- Pattern-based key cleanup
+- Versioned cache keys for safe deployments
+
+### 4. HTTP Caching Headers
+- Set Cache-Control, ETag, Last-Modified on API responses
+- Implement conditional requests (If-None-Match, If-Modified-Since)
+- Configure CDN-friendly headers (Surrogate-Control, Surrogate-Key)
+
+### 5. Cache Middleware
+\`\`\`typescript
+export function cached(ttl: number = 300, tags?: string[]) {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    const key = generateCacheKey(req);
+    const cached = await cacheService.get(key);
+    if (cached) { res.json(cached); return; }
+    // Intercept response, cache it, then send
+    next();
+  };
+}
+\`\`\`
+
+### 6. Monitoring
+- Cache hit/miss ratio metrics
+- Latency tracking for cache vs DB reads
+- Memory usage monitoring
+- Alert on high miss rates
+
+**Verification:**
+- [ ] Cache strategy correctly implemented
+- [ ] TTL values are appropriate for data type
+- [ ] Invalidation covers all write paths
+- [ ] No stale data scenarios unhandled
+- [ ] HTTP caching headers are correct
+- [ ] Monitoring is in place
+`;
+
+    return this.runTask(prompt);
+  }
+
+  // ============================================
+  // WEBSOCKET
+  // ============================================
+
+  async createWebsocketEndpoint(path: string, description: string): Promise<TaskResult> {
+    await this.notifier.notify(`Creating WebSocket endpoint: ${path}`);
+
+    const prompt = `
+Create a WebSocket endpoint:
+
+**Path:** ${path}
+**Description:** ${description}
+
+## Deliverables
+
+### 1. Connection Manager
+\`\`\`typescript
+import { WebSocket } from 'ws';
+
+class ConnectionManager {
+  private connections = new Map<string, WebSocket>();
+  private rooms = new Map<string, Set<string>>();
+
+  connect(ws: WebSocket, clientId: string): void {
+    this.connections.set(clientId, ws);
+  }
+
+  disconnect(clientId: string): void {
+    this.connections.delete(clientId);
+    // Clean up room memberships
+  }
+
+  broadcast(message: object, room?: string): void {
+    // Send to all or room members
+  }
+
+  sendTo(clientId: string, message: object): void {
+    // Send to specific client
+  }
+}
+\`\`\`
+
+### 2. WebSocket Endpoint
+- Accept connections with authentication
+- Parse message types (JSON protocol)
+- Route messages to appropriate handlers
+- Handle disconnections gracefully
+
+### 3. Heartbeat / Keep-Alive
+- Server-initiated ping every 30 seconds
+- Client pong response handling
+- Disconnect stale connections after 3 missed pongs
+- Configurable heartbeat interval
+
+### 4. Message Protocol
+\`\`\`typescript
+interface WSMessage {
+  type: 'subscribe' | 'unsubscribe' | 'message' | 'ping' | 'pong';
+  channel?: string;
+  payload?: Record<string, unknown>;
+  id?: string; // For request-response correlation
+}
+\`\`\`
+
+### 5. Reconnection Support
+- Send connection state on reconnect
+- Message queue for offline clients (brief window)
+- Last-event-id support for resuming streams
+- Exponential backoff guidance for clients
+
+### 6. Scaling Considerations
+- Redis Pub/Sub for multi-instance message distribution
+- Sticky sessions configuration notes
+- Connection count limits and backpressure
+
+**Verification:**
+- [ ] Connection lifecycle is complete (connect, message, disconnect)
+- [ ] Heartbeat keeps connections alive
+- [ ] Authentication is enforced
+- [ ] Message protocol is well-defined
+- [ ] Reconnection is supported
+- [ ] Error handling covers all edge cases
+`;
+
+    return this.runTask(prompt);
+  }
+
+  // ============================================
+  // BACKGROUND JOBS
+  // ============================================
+
+  async setupBackgroundJobs(jobDescriptions: string): Promise<TaskResult> {
+    await this.notifier.notify(`Setting up background jobs: ${jobDescriptions.substring(0, 50)}`);
+
+    const prompt = `
+Set up background job processing:
+
+**Jobs Required:** ${jobDescriptions}
+
+## Deliverables
+
+### 1. BullMQ Queue Configuration
+\`\`\`typescript
+import { Queue, Worker, QueueScheduler } from 'bullmq';
+
+const connection = { host: 'localhost', port: 6379 };
+
+const orderQueue = new Queue('orders', { connection });
+const scheduler = new QueueScheduler('orders', { connection });
+\`\`\`
+
+### 2. Job Definitions
+- Define each job/task with clear input/output types
+- Set appropriate timeouts per job type
+- Configure concurrency limits where needed
+
+### 3. Retry Strategy
+- Exponential backoff: delay * 2^attempt
+- Max retries per job type (default: 3)
+- Configurable retry exceptions (transient vs permanent)
+- Dead letter queue for permanently failed jobs
+
+### 4. Dead Letter Queue (DLQ)
+\`\`\`typescript
+const deadLetterQueue = new Queue('dead-letters', { connection });
+
+worker.on('failed', async (job, err) => {
+  if (job && job.attemptsMade >= job.opts.attempts!) {
+    await deadLetterQueue.add('failed', {
+      originalQueue: 'orders',
+      jobData: job.data,
+      error: err.message,
+      failedAt: new Date().toISOString(),
+    });
+  }
+});
+\`\`\`
+
+### 5. Scheduling
+- Repeatable jobs with cron expressions
+- One-off delayed jobs with delay option
+- Rate limiting per queue
+
+### 6. Monitoring & Observability
+- Bull Board dashboard setup
+- Metrics: queue depth, processing time, failure rate
+- Alerts on: DLQ growth, queue backlog, worker crashes
+- Structured logging for job execution
+
+### 7. Worker Configuration
+- Concurrency settings per worker
+- Sandboxed processors for isolation
+- Graceful shutdown handling
+
+**Verification:**
+- [ ] All jobs are defined with proper types
+- [ ] Retry logic handles transient failures
+- [ ] DLQ captures permanent failures
+- [ ] Scheduling is configured correctly
+- [ ] Monitoring dashboard is set up
+- [ ] Workers handle graceful shutdown
+`;
+
+    return this.runTask(prompt);
+  }
+
+  // ============================================
+  // API VERSIONING
+  // ============================================
+
+  async createApiVersion(currentVersion: string, changes: string): Promise<TaskResult> {
+    await this.notifier.notify(`Creating API version plan: ${currentVersion} -> next`);
+
+    const prompt = `
+Create an API versioning strategy:
+
+**Current Version:** ${currentVersion}
+**Planned Changes:** ${changes}
+
+## Deliverables
+
+### 1. Version Strategy
+- Determine versioning approach (URL path /api/v2/, header, or content negotiation)
+- Define version routing middleware
+- Set up version-specific route registration
+
+### 2. New Version Implementation
+\`\`\`typescript
+import { Router } from 'express';
+
+const v1Router = Router();
+const v2Router = Router();
+
+// Shared business logic via services
+// Version-specific request/response adapters
+
+app.use('/api/v1', v1Router);
+app.use('/api/v2', v2Router);
+\`\`\`
+
+### 3. Migration Plan
+| Endpoint | v${currentVersion} (Current) | Next Version (Changes) | Breaking? |
+|----------|------|------|----------|
+| [List affected endpoints with changes] |
+
+### 4. Deprecation Strategy
+- Add Sunset header to deprecated endpoints
+- Add Deprecation header with date
+- Include Link header pointing to new version docs
+- Log usage of deprecated endpoints for tracking
+
+\`\`\`typescript
+function deprecationMiddleware(sunsetDate: string, successorUrl: string) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    res.set('Deprecation', 'true');
+    res.set('Sunset', sunsetDate);
+    res.set('Link', \\\`<\\\${successorUrl}>; rel="successor-version"\\\`);
+    next();
+  };
+}
+\`\`\`
+
+### 5. Client Communication
+- Changelog document for the new version
+- Migration guide with before/after examples
+- SDK/client library update notes
+- Timeline: deprecation announcement -> warning period -> sunset
+
+### 6. Coexistence Plan
+- Both versions run simultaneously during transition
+- Shared service/business logic layer
+- Version-specific adapters for request/response transformation
+- Database compatibility across versions
+
+**Verification:**
+- [ ] Version routing works correctly
+- [ ] Deprecation headers are set on old version
+- [ ] Migration guide covers all breaking changes
+- [ ] Both versions can coexist
+- [ ] Client communication is clear
+- [ ] Sunset timeline is defined
+`;
+
+    return this.runTask(prompt);
+  }
+
+  // ============================================
   // GENERAL
   // ============================================
 
