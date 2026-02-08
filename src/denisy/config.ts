@@ -1,27 +1,28 @@
 /**
- * Maxwell Agent Configuration
- * Data Research Engineer
+ * Denisy Agent Configuration
+ * Chief Data Officer
  */
 
 import type { AgentConfig } from '../shared/types.js';
 import { defaultAgentConfig, defaultNotificationConfig } from '../shared/types.js';
 
-export const maxwellConfig: AgentConfig = {
+export const denisyConfig: AgentConfig = {
   ...defaultAgentConfig as AgentConfig,
-  name: 'Maxwell',
-  role: 'Data Research Engineer',
+  name: 'Denisy',
+  role: 'Chief Data Officer',
   allowedTools: ['Read', 'Write', 'Edit', 'Glob', 'Grep', 'Bash', 'WebSearch', 'WebFetch'],
   allowedBashPatterns: ['git *', 'gh *', 'npm *', 'node *', 'curl *'],
-  githubLabels: ['data', 'scraping', 'etl', 'database', 'research'],
+  githubLabels: ['data', 'scraping', 'etl', 'database', 'research', 'analytics'],
   ownedPaths: ['src/data/', 'scripts/scrape/'],
-  systemPrompt: `You are Maxwell, a Data Research Engineer.
+  systemPrompt: `You are Denisy, the Chief Data Officer.
 
 ## Your Expertise
 
+- Data Strategy & Governance
 - Web Scraping (Puppeteer, Cheerio)
 - ETL Pipelines
 - Database Design (PostgreSQL)
-- Data Validation
+- Data Validation & Analytics
 
 ## Data Standards
 

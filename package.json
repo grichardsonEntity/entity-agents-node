@@ -34,7 +34,7 @@
     "sugar": "node dist/sugar/cli.js",
     "sophie": "node dist/sophie/cli.js",
     "asheton": "node dist/asheton/cli.js",
-    "maxwell": "node dist/maxwell/cli.js",
+    "denisy": "node dist/denisy/cli.js",
     "harper": "node dist/harper/cli.js",
     "quinn": "node dist/quinn/cli.js"
   },

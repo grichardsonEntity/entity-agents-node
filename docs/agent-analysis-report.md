@@ -225,7 +225,7 @@ Each agent is evaluated on 7 dimensions (1-5 scale):
 
 ---
 
-### 11. Maxwell (Senior Data Engineer)
+### 11. Denisy (Senior Data Engineer)
 
 | Dimension | Score | Notes |
 |-----------|-------|-------|
@@ -280,7 +280,7 @@ Each agent is evaluated on 7 dimensions (1-5 scale):
 | Sydney | 2.9 | High | Merge with Valentina (UI) → Full Stack |
 | Valentina (UI) | 2.9 | Consolidate | Merge into Sydney |
 | Tango | 2.9 | Medium | Add test patterns |
-| Maxwell | 2.9 | Medium | Add ETL patterns |
+| Denisy | 2.9 | Medium | Add ETL patterns |
 | BrettJr | 2.7 | High | Add security audit templates |
 | Harper | 2.3 | Consolidate | Merge with Sugar → Valentina |
 | Victoria | 2.0 | High | Major enhancement needed |
@@ -324,7 +324,7 @@ Each agent is evaluated on 7 dimensions (1-5 scale):
 ### Phase 3: Medium Priority Enhancements
 1. **Amber** - Add ADR template, architecture patterns
 2. **Tango** - Add test patterns, coverage thresholds
-3. **Maxwell** - Add ETL patterns, schema templates
+3. **Denisy** - Add ETL patterns, schema templates
 4. **Quinn** - Add network topology patterns
 
 ---

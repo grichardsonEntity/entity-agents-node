@@ -21,7 +21,7 @@ export { BrettJrAgent, brettjrConfig } from './brettjr/index.js';
 export { TangoAgent, tangoConfig } from './tango/index.js';
 export { SophieAgent, sophieConfig } from './sophie/index.js';
 export { AshetonAgent, ashetonConfig } from './asheton/index.js';
-export { MaxwellAgent, maxwellConfig } from './maxwell/index.js';
+export { DenisyAgent, denisyConfig } from './denisy/index.js';
 export { QuinnAgent, quinnConfig } from './quinn/index.js';
 export { VeraAgent, veraConfig } from './vera/index.js';
 
@@ -35,7 +35,7 @@ export const AGENTS = {
   tango: TangoAgent,
   sophie: SophieAgent,
   asheton: AshetonAgent,
-  maxwell: MaxwellAgent,
+  denisy: DenisyAgent,
   quinn: QuinnAgent,
   vera: VeraAgent,
 } as const;
@@ -65,6 +65,6 @@ import { BrettJrAgent } from './brettjr/index.js';
 import { TangoAgent } from './tango/index.js';
 import { SophieAgent } from './sophie/index.js';
 import { AshetonAgent } from './asheton/index.js';
-import { MaxwellAgent } from './maxwell/index.js';
+import { DenisyAgent } from './denisy/index.js';
 import { QuinnAgent } from './quinn/index.js';
 import { VeraAgent } from './vera/index.js';

@@ -23,7 +23,7 @@ This is a comprehensive prompt that transforms your Node/TypeScript agent team:
 find . -type d -maxdepth 2 -name "[a-z]*" | grep -v node_modules | grep -v _archived | grep -v dist | grep -v shared | grep -v docs | sort
 ```
 
-Expected agents: sydney, valentina, amber, victoria, brettjr, tango, sugar, sophie, asheton, maxwell, harper, quinn
+Expected agents: sydney, valentina, amber, victoria, brettjr, tango, sugar, sophie, asheton, denisy, harper, quinn
 
 ## Step 1.2: Read Every Agent File Completely
 
@@ -84,7 +84,7 @@ Save to `docs/agent-analysis-report.md`:
 | Sugar | X | X | X | X | X | X | X | X.X |
 | Sophie | X | X | X | X | X | X | X | X.X |
 | Asheton | X | X | X | X | X | X | X | X.X |
-| Maxwell | X | X | X | X | X | X | X | X.X |
+| Denisy | X | X | X | X | X | X | X | X.X |
 | Harper | X | X | X | X | X | X | X | X.X |
 | Quinn | X | X | X | X | X | X | X | X.X |
 
@@ -412,7 +412,7 @@ export { BrettJrAgent, brettjrConfig } from './brettjr';
 export { TangoAgent, tangoConfig } from './tango';
 export { SophieAgent, sophieConfig } from './sophie';
 export { AshetonAgent, ashetonConfig } from './asheton';
-export { MaxwellAgent, maxwellConfig } from './maxwell';
+export { DenisyAgent, denisyConfig } from './denisy';
 export { QuinnAgent, quinnConfig } from './quinn';
 
 export * from './shared/types';

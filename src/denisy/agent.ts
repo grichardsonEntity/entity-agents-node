@@ -1,12 +1,12 @@
 /**
- * Maxwell Agent - Data Research Engineer
+ * Denisy Agent - Chief Data Officer
  */
 
 import { BaseAgent, type TaskResult } from '../shared/index.js';
-import { maxwellConfig } from './config.js';
+import { denisyConfig } from './config.js';
 
-export class MaxwellAgent extends BaseAgent {
-  constructor(config = maxwellConfig) {
+export class DenisyAgent extends BaseAgent {
+  constructor(config = denisyConfig) {
     super(config);
   }
 
